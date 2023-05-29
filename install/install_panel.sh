@@ -468,7 +468,7 @@ Install_Python_Lib(){
 	fi
 }
 Install_Bt(){
-	panelPort="8888"
+	panelPort="8900"
 	if [ -f ${setup_path}/server/panel/data/port.pl ];then
 		panelPort=$(cat ${setup_path}/server/panel/data/port.pl)
 	fi
@@ -544,6 +544,30 @@ Install_Bt(){
 	wget -O /www/server/panel/init.sh https://gh.112230.xyz/https://raw.githubusercontent.com/vtumi/btpanel-v7.7.0/proxy/install/src/bt7.init -T 10
 	wget -O /www/server/panel/data/softList.conf ${download_Url}/install/conf/softList.conf
 }
+Optimize_Bt(){
+	sed -i "s|if (bind_user == 'True') {|if (bind_user == 'REMOVED') {|g" /www/server/panel/BTPanel/static/js/index.js
+	sed -i "/htaccess = self.sitePath+'\/.htaccess'/, /public.ExecShell('chown -R www:www ' + htaccess)/d" /www/server/panel/class/panelSite.py
+	sed -i "/index = self.sitePath+'\/index.html'/, /public.ExecShell('chown -R www:www ' + index)/d" /www/server/panel/class/panelSite.py
+	sed -i "/doc404 = self.sitePath+'\/404.html'/, /public.ExecShell('chown -R www:www ' + doc404)/d" /www/server/panel/class/panelSite.py
+	sed -i "s/root \/www\/server\/nginx\/html/return 400/" /www/server/panel/class/panelSite.py
+	if [ -f /www/server/panel/vhost/nginx/0.default.conf ]; then
+		sed -i "s/root \/www\/server\/nginx\/html/return 400/" /www/server/panel/vhost/nginx/0.default.conf
+	fi
+	sed -i "s/return render_template('autherr.html')/return abort(404)/" /www/server/panel/BTPanel/__init__.py
+	sed -i "/p = threading.Thread(target=check_files_panel)/, /p.start()/d" /www/server/panel/task.py
+	sed -i "/p = threading.Thread(target=check_panel_msg)/, /p.start()/d" /www/server/panel/task.py
+	sed -i "/^logs_analysis()/d" /www/server/panel/script/site_task.py
+	sed -i "s/run_thread(cloud_check_domain,(domain,))/return/" /www/server/panel/class/public.py
+	if [ ! -f /www/server/panel/data/not_recommend.pl ]; then
+		echo "True" > /www/server/panel/data/not_recommend.pl
+	fi
+	if [ ! -f /www/server/panel/data/not_workorder.pl ]; then
+		echo "True" > /www/server/panel/data/not_workorder.pl
+	fi
+	sed -i "s/public.httpPost(cloudUrl,pdata,6)/public.httpPost(cloudUrl,pdata,6).replace('\"ltd\":-1,\"pro\":-1','\"ltd\":-1,\"pro\":0')/" /www/server/panel/class/panelPlugin.py
+	sed -i "/softList\['list'\] = tmpList/a\                softList['pro'] = 1\n        for soft in softList['list']:\n            soft['endtime'] = 0" /www/server/panel/class/panelPlugin.py
+	sed -i "/<div id=\"updata_pro_info\">/,+2d" /www/server/panel/BTPanel/templates/default/soft.html
+}
 Set_Bt_Panel(){
 	password=$(cat /dev/urandom | head -n 16 | md5sum | head -c 8)
 	sleep 1
@@ -565,7 +589,7 @@ Set_Bt_Panel(){
 	/etc/init.d/bt restart 	
 	sleep 3
 	isStart=$(ps aux |grep 'BT-Panel'|grep -v grep|awk '{print $2}')
-	LOCAL_CURL=$(curl 127.0.0.1:8888/login 2>&1 |grep -i html)
+	LOCAL_CURL=$(curl 127.0.0.1:8900/login 2>&1 |grep -i html)
 	if [ -z "${isStart}" ] && [ -z "${LOCAL_CURL}" ];then
 		/etc/init.d/bt 22
 		cd /www/server/panel/pyenv/bin
@@ -695,7 +719,7 @@ Install_Main(){
 
 	Install_Python_Lib
 	Install_Bt
-	
+	Optimize_Bt
 
 	Set_Bt_Panel
 	Service_Add
@@ -711,7 +735,7 @@ echo "
 +----------------------------------------------------------------------
 | Copyright © 2015-2099 BT-SOFT(http://www.bt.cn) All rights reserved.
 +----------------------------------------------------------------------
-| The WebPanel URL will be http://SERVER_IP:8888 when installed.
+| The WebPanel URL will be http://SERVER_IP:8900 when installed.
 +----------------------------------------------------------------------
 "
 while [ "$go" != 'y' ] && [ "$go" != 'n' ]
@@ -724,7 +748,7 @@ if [ "$go" == 'n' ];then
 fi
 
 Install_Main
-echo > /www/server/panel/data/bind.pl
+
 echo -e "=================================================================="
 echo -e "\033[32mCongratulations! Installed successfully!\033[0m"
 echo -e "=================================================================="
