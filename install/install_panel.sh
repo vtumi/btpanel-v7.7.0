@@ -140,57 +140,7 @@ get_node_url(){
 		fi
 	fi
 
-	if [ -f "/www/node.pl" ];then
-		download_Url=$(cat /www/node.pl)
-		echo "Download node: $download_Url";
-		echo '---------------------------------------------';
-		return
-	fi
-	
-	echo '---------------------------------------------';
-	echo "Selected download node...";
-	nodes=(http://dg2.bt.cn http://dg1.bt.cn http://125.90.93.52:5880 http://36.133.1.8:5880 http://123.129.198.197 http://38.34.185.130 http://116.213.43.206:5880 http://128.1.164.196);
-	tmp_file1=/dev/shm/net_test1.pl
-	tmp_file2=/dev/shm/net_test2.pl
-	[ -f "${tmp_file1}" ] && rm -f ${tmp_file1}
-	[ -f "${tmp_file2}" ] && rm -f ${tmp_file2}
-	touch $tmp_file1
-	touch $tmp_file2
-	for node in ${nodes[@]};
-	do
-		NODE_CHECK=$(curl --connect-timeout 3 -m 3 2>/dev/null -w "%{http_code} %{time_total}" ${node}/net_test|xargs)
-		RES=$(echo ${NODE_CHECK}|awk '{print $1}')
-		NODE_STATUS=$(echo ${NODE_CHECK}|awk '{print $2}')
-		TIME_TOTAL=$(echo ${NODE_CHECK}|awk '{print $3 * 1000 - 500 }'|cut -d '.' -f 1)
-		if [ "${NODE_STATUS}" == "200" ];then
-			if [ $TIME_TOTAL -lt 100 ];then
-				if [ $RES -ge 1500 ];then
-					echo "$RES $node" >> $tmp_file1
-				fi
-			else
-				if [ $RES -ge 1500 ];then
-					echo "$TIME_TOTAL $node" >> $tmp_file2
-				fi
-			fi
-
-			i=$(($i+1))
-			if [ $TIME_TOTAL -lt 100 ];then
-				if [ $RES -ge 3000 ];then
-					break;
-				fi
-			fi	
-		fi
-	done
-
-	NODE_URL=$(cat $tmp_file1|sort -r -g -t " " -k 1|head -n 1|awk '{print $2}')
-	if [ -z "$NODE_URL" ];then
-		NODE_URL=$(cat $tmp_file2|sort -g -t " " -k 1|head -n 1|awk '{print $2}')
-		if [ -z "$NODE_URL" ];then
-			NODE_URL='http://download.bt.cn';
-		fi
-	fi
-	rm -f $tmp_file1
-	rm -f $tmp_file2
+    NODE_URL=https://gh.112230.xyz/https://raw.githubusercontent.com/vtumi/btpanel-v7.7.0/proxy
 	download_Url=$NODE_URL
 	echo "Download node: $download_Url";
 	echo '---------------------------------------------';
@@ -221,7 +171,7 @@ Install_RPM_Pack(){
 	#yumBaseUrl=$(cat /etc/yum.repos.d/CentOS-Base.repo|grep baseurl=http|cut -d '=' -f 2|cut -d '$' -f 1|head -n 1)
 	#[ "${yumBaseUrl}" ] && checkYumRepo=$(curl --connect-timeout 5 --head -s -o /dev/null -w %{http_code} ${yumBaseUrl})	
 	#if [ "${checkYumRepo}" != "200" ] && [ "${SYS_TYPE}" ];then
-	#	curl -Ss --connect-timeout 3 -m 60 https://gh.112230.xyz/https://raw.githubusercontent.com/vtumi/btpanel-v7.7.0/proxy/install/yumRepo_select.sh|bash
+	#	curl -Ss --connect-timeout 3 -m 60 $download_Url/install/yumRepo_select.sh|bash
 	#fi
 	
 	#尝试同步时间(从bt.cn)
@@ -355,7 +305,7 @@ Get_Versions(){
 	fi
 }
 Install_Python_Lib(){
-	curl -Ss --connect-timeout 3 -m 60 https://gh.112230.xyz/https://raw.githubusercontent.com/vtumi/btpanel-v7.7.0/proxy/install/pip_select.sh|bash
+	curl -Ss --connect-timeout 3 -m 60 $download_Url/install/pip_select.sh|bash
 	pyenv_path="/www/server/panel"
 	if [ -f $pyenv_path/pyenv/bin/python ];then
 	 	is_ssl=$($python_bin -c "import ssl" 2>&1|grep cannot)
@@ -388,10 +338,6 @@ Install_Python_Lib(){
 	Get_Versions
 
 	echo "OS: $os_type - $os_version"
-	is_aarch64=$(uname -a|grep aarch64)
-	if [ "$is_aarch64" != "" ];then
-		is64bit="aarch64"
-	fi
 	
 	if [ -f "/www/server/panel/pymake.pl" ];then
 		os_version=""
@@ -488,9 +434,9 @@ Install_Bt(){
 		sleep 1
 	fi
 
-	wget -O /etc/init.d/bt https://gh.112230.xyz/https://raw.githubusercontent.com/vtumi/btpanel-v7.7.0/proxy/install/src/bt6.init -T 10
-	wget -O /www/server/panel/install/public.sh https://gh.112230.xyz/https://raw.githubusercontent.com/vtumi/btpanel-v7.7.0/proxy/install/public.sh -T 10
-	wget -O panel.zip https://gh.112230.xyz/https://raw.githubusercontent.com/vtumi/btpanel-v7.7.0/proxy/install/src/panel6.zip -T 10
+	wget -O /etc/init.d/bt $download_Url/install/src/bt6.init -T 10
+	wget -O /www/server/panel/install/public.sh $download_Url/install/public.sh -T 10
+	wget -O panel.zip $download_Url/install/src/panel6.zip -T 10
 
 	if [ -f "${setup_path}/server/panel/data/default.db" ];then
 		if [ -d "/${setup_path}/server/panel/old_data" ];then
@@ -540,8 +486,8 @@ Install_Bt(){
 	chmod -R +x ${setup_path}/server/panel/script
 	ln -sf /etc/init.d/bt /usr/bin/bt
 	echo "${panelPort}" > ${setup_path}/server/panel/data/port.pl
-	wget -O /etc/init.d/bt https://gh.112230.xyz/https://raw.githubusercontent.com/vtumi/btpanel-v7.7.0/proxy/install/src/bt7.init -T 10
-	wget -O /www/server/panel/init.sh https://gh.112230.xyz/https://raw.githubusercontent.com/vtumi/btpanel-v7.7.0/proxy/install/src/bt7.init -T 10
+	wget -O /etc/init.d/bt $download_Url/install/src/bt7.init -T 10
+	wget -O /www/server/panel/init.sh $download_Url/install/src/bt7.init -T 10
 	wget -O /www/server/panel/data/softList.conf ${download_Url}/install/conf/softList.conf
 }
 Optimize_Bt(){
@@ -691,7 +637,6 @@ Get_Ip_Address(){
 	LOCAL_IP=$(ip addr | grep -E -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -E -v "^127\.|^255\.|^0\." | head -n 1)
 }
 Setup_Count(){
-	curl -sS --connect-timeout 10 -m 60 https://www.bt.cn/Api/SetupCount?type=Linux\&o=$1 > /dev/null 2>&1
 	if [ "$1" != "" ];then
 		echo $1 > /www/server/panel/data/o.pl
 		cd /www/server/panel

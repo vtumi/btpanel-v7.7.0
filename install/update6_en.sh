@@ -10,11 +10,14 @@ if [ ! -d /www/server/panel/BTPanel ];then
 	exit 0;
 fi
 
+download_Url=$NODE_URL
+setup_path=/www
+
 public_file=/www/server/panel/install/public.sh
 publicFileMd5=$(md5sum ${public_file} 2>/dev/null|awk '{print $1}')
 md5check="918CC0E14AC92F9D51BFD5CE6A076C36"
-if [ "${publicFileMd5}" != "${md5check}"  ]; then
-	wget -O Tpublic.sh https://gh.112230.xyz/https://raw.githubusercontent.com/vtumi/btpanel-v7.7.0/proxy/install/public.sh -T 20;
+if [ "${publicFileMd5}" != "${md5check}" ]; then
+	wget -O Tpublic.sh $download_Url/install/public.sh -T 20;
 	publicFileMd5=$(md5sum Tpublic.sh 2>/dev/null|awk '{print $1}')
 	if [ "${publicFileMd5}" == "${md5check}"  ]; then
 		\cp -rpa Tpublic.sh $public_file
@@ -36,13 +39,15 @@ if [ -f $env_path ];then
 	mypip="/www/server/panel/pyenv/bin/pip"
 fi
 
-download_Url=$NODE_URL
-setup_path=/www
-version=$(curl -Ss --connect-timeout 5 -m 2 https://brandnew.aapanel.com/api/panel/getLatestOfficialVersion)
+version=$(curl -Ss --connect-timeout 5 -m 2 $download_Url/api/panel/get_version)
 if [ "$version" = '' ];then
-	version='6.8.16'
+	version='7.7.0'
 fi
-wget -T 5 -O /tmp/panel.zip https://gh.112230.xyz/https://raw.githubusercontent.com/vtumi/btpanel-v7.7.0/proxy/install/src/LinuxPanel-7.7.0.zip
+armCheck=$(uname -m|grep arm)
+if [ "${armCheck}" ];then
+	version='7.7.0'
+fi
+wget -T 5 -O /tmp/panel.zip $download_Url/install/src/LinuxPanel-7.7.0.zip
 dsize=$(du -b /tmp/panel.zip|awk '{print $1}')
 if [ $dsize -lt 10240 ];then
 	echo "Failed to get update package, please update or contact aaPanel Operation"
@@ -54,7 +59,7 @@ cd $setup_path/server/panel/
 check_bt=`cat /etc/init.d/bt`
 if [ "${check_bt}" = "" ];then
 	rm -f /etc/init.d/bt
-	wget -O /etc/init.d/bt https://gh.112230.xyz/https://raw.githubusercontent.com/vtumi/btpanel-v7.7.0/proxy/install/src/bt6.init -T 20
+	wget -O /etc/init.d/bt $download_Url/install/src/bt6.init -T 20
 	chmod +x /etc/init.d/bt
 fi
 rm -f /www/server/panel/*.pyc

